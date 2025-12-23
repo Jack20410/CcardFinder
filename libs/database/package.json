@@ -1,0 +1,19 @@
+{
+  "name": "@ccard/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@prisma/client": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "dotenv": "^17.2.3",
+    "prisma": "^7.2.0"
+  }
+}

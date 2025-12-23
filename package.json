@@ -1,0 +1,22 @@
+{
+  "name": "ccard-finder",
+  "version": "1.0.0",
+  "description": "This projects helps people who is beginning to apply a credit card for their own personal, give them a wide variety of plans from any banker they prefer either can be suggest by system base on their circumstances, ...",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm recursive run dev",
+    "build": "pnpm recursive run build",
+    "test": "pnpm recursive run test"
+  },
+  "keywords": [],
+  "author": "Jack Le",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@prisma/client": "^7.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "prisma": "^7.2.0"
+  }
+}

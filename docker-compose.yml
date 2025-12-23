@@ -1,0 +1,43 @@
+services:
+  # --- Database ---
+  db:
+    image: postgres:15-alpine
+    container_name: ccard-db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ccardfinder
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- Node.js Gateway ---
+  gateway:
+    build: 
+      context: .
+      dockerfile: app/gateway/Dockerfile
+    container_name: ccard-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/ccardfinder
+      - AI_SERVICE_URL=http://ai-service:8000
+    depends_on:
+      - db
+
+  # --- FastAPI AI Service ---
+  ai-service:
+    build:
+      context: ./app/ai-service
+    container_name: ccard-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

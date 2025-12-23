@@ -1,0 +1,54 @@
+datasource db {
+  provider = "postgresql"
+}
+
+// Generator for TypeScript (Gateway & Frontend)
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Generator for Python (AI Service)
+//generator py_client {
+  //provider = "prisma-client-py"
+//}
+
+model Bank {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  logoUrl   String?
+  cards     CreditCard[]
+}
+
+model CreditCard {
+  id              String   @id @default(uuid())
+  name            String
+  bankId          String
+  bank            Bank     @relation(fields: [bankId], references: [id])
+  
+  // Financial Metrics
+  annualFee       Decimal  @db.Decimal(10, 2)
+  aprMin          Decimal  @db.Decimal(5, 2)
+  aprMax          Decimal  @db.Decimal(5, 2)
+  foreignFee      Decimal  @db.Decimal(5, 2) @default(0)
+  
+  // Requirements & Benefits
+  creditScoreMin  Int      // e.g., 670
+  signupBonus     String?  // e.g., "60,000 points"
+  intendedUse     String[] // e.g., ["Travel", "Groceries"]
+  
+  // AI-Ready Fields
+  aiBenefitSummary String? @db.Text
+  isStudentFriendly Boolean @default(false)
+  isElderlyFriendly Boolean @default(false)
+
+  rewards         RewardCategory[]
+  createdAt       DateTime @default(now())
+}
+
+model RewardCategory {
+  id         String     @id @default(uuid())
+  cardId     String
+  card       CreditCard @relation(fields: [cardId], references: [id])
+  category   String     // e.g., "Dining"
+  multiplier Float      // e.g., 3.0 for 3x points
+}
