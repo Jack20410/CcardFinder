@@ -1,0 +1,45 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Python
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+*.log
+.env.local
+.env.*.local
+README.md
+

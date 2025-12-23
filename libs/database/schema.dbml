@@ -1,0 +1,150 @@
+// Database Schema for CcardFinder
+// View at: https://dbdiagram.io/
+// Paste this code there to see visual diagram
+
+Table CreditCard {
+  id String [pk, note: 'UUID']
+  name String [note: 'Chase Sapphire Preferred']
+  issuer String [note: 'Chase, Amex, Capital One']
+  imageUrl String [null]
+  applyUrl String [null]
+  
+  // Financial Details
+  annualFee Decimal [note: '95.00']
+  aprMin Decimal [note: '18.99']
+  aprMax Decimal [note: '25.99']
+  foreignTransactionFee Decimal [default: 0]
+  creditScoreMin Int [note: '670']
+  incomeRequirement Decimal [null]
+  
+  // Rewards
+  signupBonus Int [note: '60000 points']
+  signupSpendReq Decimal [note: '4000.00']
+  
+  category CardCategory
+  targetAudience Audience [note: 'Array']
+  
+  createdAt DateTime
+  updatedAt DateTime
+  
+  indexes {
+    issuer
+    category
+    creditScoreMin
+  }
+}
+
+Table RewardRate {
+  id String [pk]
+  creditCardId String [ref: > CreditCard.id, note: 'CASCADE DELETE']
+  
+  category SpendingCategory
+  rate Decimal [note: '3.0 for 3x points']
+  pointValue Decimal [note: '0.0125 per point']
+  
+  createdAt DateTime
+  
+  indexes {
+    creditCardId
+    category
+    (creditCardId, category) [unique]
+  }
+}
+
+Table Benefit {
+  id String [pk]
+  creditCardId String [ref: > CreditCard.id, note: 'CASCADE DELETE']
+  
+  title String
+  description Text
+  aiSummary Text [null, note: 'AI-generated explanation']
+  type BenefitType
+  
+  createdAt DateTime
+  
+  indexes {
+    creditCardId
+    type
+  }
+}
+
+Table User {
+  id String [pk]
+  email String [unique]
+  passwordHash String [null]
+  name String [null]
+  
+  creditScore Int [null]
+  annualIncome Decimal [null]
+  audience Audience [null]
+  
+  createdAt DateTime
+  updatedAt DateTime
+}
+
+Table SpendingProfile {
+  id String [pk]
+  userId String [unique, ref: - User.id, note: 'CASCADE DELETE, 1:1']
+  
+  diningSpend Decimal [default: 0]
+  travelSpend Decimal [default: 0]
+  groceriesSpend Decimal [default: 0]
+  gasSpend Decimal [default: 0]
+  generalSpend Decimal [default: 0]
+  
+  createdAt DateTime
+  updatedAt DateTime
+}
+
+Table UserCardComparison {
+  id String [pk]
+  userId String [ref: > User.id, note: 'CASCADE DELETE']
+  creditCardId String [ref: > CreditCard.id, note: 'CASCADE DELETE']
+  
+  calculatedNAV Decimal [null, note: 'Net Annual Value']
+  notes Text [null]
+  
+  createdAt DateTime
+  
+  indexes {
+    userId
+    (userId, creditCardId) [unique]
+  }
+}
+
+// Enums
+Enum CardCategory {
+  TRAVEL
+  CASHBACK
+  BUSINESS
+  STUDENT
+  SECURED
+  PREMIUM
+}
+
+Enum Audience {
+  REGULAR
+  STUDENT
+  PROFESSIONAL
+  ELDERLY
+}
+
+Enum SpendingCategory {
+  DINING
+  TRAVEL
+  GROCERIES
+  GAS
+  GENERAL
+  STREAMING
+  ONLINE_SHOPPING
+}
+
+Enum BenefitType {
+  INSURANCE
+  PURCHASE_PROTECTION
+  LOUNGE_ACCESS
+  CONCIERGE
+  EXTENDED_WARRANTY
+  FRAUD_PROTECTION
+}
+

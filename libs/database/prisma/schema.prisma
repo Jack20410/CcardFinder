@@ -1,54 +1,183 @@
-datasource db {
-  provider = "postgresql"
-}
-
-// Generator for TypeScript (Gateway & Frontend)
 generator client {
   provider = "prisma-client-js"
 }
 
-// Generator for Python (AI Service)
-//generator py_client {
-  //provider = "prisma-client-py"
-//}
-
-model Bank {
-  id        String       @id @default(uuid())
-  name      String       @unique
-  logoUrl   String?
-  cards     CreditCard[]
+datasource db {
+  provider = "postgresql"
 }
 
+// ==========================================
+// CREDIT CARD MODEL
+// ==========================================
 model CreditCard {
-  id              String   @id @default(uuid())
-  name            String
-  bankId          String
-  bank            Bank     @relation(fields: [bankId], references: [id])
+  id                    String   @id @default(uuid())
+  name                  String   // "Chase Sapphire Preferred"
+  issuer                String   // "Chase", "Amex", "Capital One"
+  imageUrl              String?  // Card image for UI
+  applyUrl              String?  // Affiliate/application link
   
-  // Financial Metrics
-  annualFee       Decimal  @db.Decimal(10, 2)
-  aprMin          Decimal  @db.Decimal(5, 2)
-  aprMax          Decimal  @db.Decimal(5, 2)
-  foreignFee      Decimal  @db.Decimal(5, 2) @default(0)
+  // Financial Details
+  annualFee             Decimal  @db.Decimal(10, 2) // 95.00
+  aprMin                Decimal  @db.Decimal(5, 2)  // 18.99
+  aprMax                Decimal  @db.Decimal(5, 2)  // 25.99
+  foreignTransactionFee Decimal  @db.Decimal(5, 2) @default(0) // 3.00%
+  creditScoreMin        Int      // 670
+  incomeRequirement     Decimal? @db.Decimal(12, 2) // 30000.00 (optional)
   
-  // Requirements & Benefits
-  creditScoreMin  Int      // e.g., 670
-  signupBonus     String?  // e.g., "60,000 points"
-  intendedUse     String[] // e.g., ["Travel", "Groceries"]
+  // Rewards
+  signupBonus           Int      // 60000 (points)
+  signupSpendReq        Decimal  @db.Decimal(10, 2) // 4000.00 (spend $4k in 3 months)
   
-  // AI-Ready Fields
-  aiBenefitSummary String? @db.Text
-  isStudentFriendly Boolean @default(false)
-  isElderlyFriendly Boolean @default(false)
-
-  rewards         RewardCategory[]
-  createdAt       DateTime @default(now())
+  // Card Category
+  category              CardCategory
+  targetAudience        Audience[]
+  
+  // Relationships
+  rewardRates           RewardRate[]
+  benefits              Benefit[]
+  userComparisons       UserCardComparison[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([issuer])
+  @@index([category])
+  @@index([creditScoreMin])
 }
 
-model RewardCategory {
-  id         String     @id @default(uuid())
-  cardId     String
-  card       CreditCard @relation(fields: [cardId], references: [id])
-  category   String     // e.g., "Dining"
-  multiplier Float      // e.g., 3.0 for 3x points
+// ==========================================
+// REWARD RATES (e.g., 3x on dining)
+// ==========================================
+model RewardRate {
+  id                    String   @id @default(uuid())
+  creditCardId          String
+  creditCard            CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  
+  category              SpendingCategory // DINING, TRAVEL, GROCERIES
+  rate                  Decimal  @db.Decimal(5, 2) // 3.0 (3x points)
+  pointValue            Decimal  @db.Decimal(8, 6) // 0.012500 (1 point = $0.0125)
+  
+  createdAt             DateTime @default(now())
+  
+  @@unique([creditCardId, category]) // Prevent duplicate categories per card
+  @@index([creditCardId])
+  @@index([category])
+}
+
+// ==========================================
+// BENEFITS (Insurance, Protections, etc.)
+// ==========================================
+model Benefit {
+  id                    String   @id @default(uuid())
+  creditCardId          String
+  creditCard            CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  
+  title                 String   // "Trip Cancellation Insurance"
+  description           String   @db.Text
+  aiSummary             String?  @db.Text // AI-generated "what this means for you"
+  
+  type                  BenefitType
+  
+  createdAt             DateTime @default(now())
+  
+  @@index([creditCardId])
+  @@index([type])
+}
+
+// ==========================================
+// USER MODEL
+// ==========================================
+model User {
+  id                    String   @id @default(uuid())
+  email                 String   @unique
+  passwordHash          String?  // Optional for OAuth users
+  name                  String?
+  
+  // User Profile Data
+  creditScore           Int?
+  annualIncome          Decimal? @db.Decimal(12, 2)
+  audience              Audience? // STUDENT, PROFESSIONAL, ELDERLY
+  
+  // User Spending Habits (for NAV calculation)
+  spendingProfile       SpendingProfile?
+  savedCards            UserCardComparison[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ==========================================
+// USER SPENDING PROFILE
+// ==========================================
+model SpendingProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  diningSpend           Decimal  @db.Decimal(10, 2) @default(0) // Monthly spending
+  travelSpend           Decimal  @db.Decimal(10, 2) @default(0)
+  groceriesSpend        Decimal  @db.Decimal(10, 2) @default(0)
+  gasSpend              Decimal  @db.Decimal(10, 2) @default(0)
+  generalSpend          Decimal  @db.Decimal(10, 2) @default(0)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ==========================================
+// USER CARD COMPARISONS (Saved for Later)
+// ==========================================
+model UserCardComparison {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  creditCardId          String
+  creditCard            CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  
+  calculatedNAV         Decimal? @db.Decimal(12, 2) // Net Annual Value calculated by FastAPI
+  notes                 String?  @db.Text
+  
+  createdAt             DateTime @default(now())
+  
+  @@unique([userId, creditCardId])
+  @@index([userId])
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+enum CardCategory {
+  TRAVEL
+  CASHBACK
+  BUSINESS
+  STUDENT
+  SECURED
+  PREMIUM
+}
+
+enum Audience {
+  REGULAR
+  STUDENT
+  PROFESSIONAL
+  ELDERLY
+}
+
+enum SpendingCategory {
+  DINING
+  TRAVEL
+  GROCERIES
+  GAS
+  GENERAL
+  STREAMING
+  ONLINE_SHOPPING
+}
+
+enum BenefitType {
+  INSURANCE
+  PURCHASE_PROTECTION
+  LOUNGE_ACCESS
+  CONCIERGE
+  EXTENDED_WARRANTY
+  FRAUD_PROTECTION
 }

@@ -8,6 +8,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: ccardfinder
+      TZ: America/Chicago  # GMT-6 (CST) / GMT-5 (CDT with daylight saving)
+      PGTZ: America/Chicago
+    command: postgres -c timezone=America/Chicago
     ports:
       - "5432:5432"
     volumes:
@@ -17,7 +20,7 @@ services:
   gateway:
     build: 
       context: .
-      dockerfile: app/gateway/Dockerfile
+      dockerfile: apps/gateway/Dockerfile
     container_name: ccard-gateway
     ports:
       - "4000:4000"
@@ -30,7 +33,7 @@ services:
   # --- FastAPI AI Service ---
   ai-service:
     build:
-      context: ./app/ai-service
+      context: ./apps/ai-service
     container_name: ccard-ai
     ports:
       - "8000:8000"
